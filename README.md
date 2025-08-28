@@ -345,7 +345,7 @@ Finally, you need orchestration to tie retrieval into your RAG pipeline:
 
 This 3-stage retrieval pipeline balances **latency, cost, and accuracy** for most enterprise workloads.
 
-## 7. Putting It All Together: A Reference Architecture for RAG Search
+## 7. Putting It All Together
 
 Now that we’ve explored the different search mechanisms and tech stacks, let’s combine them into a **reference enterprise RAG retrieval pipeline**.  
 
@@ -412,7 +412,8 @@ In the next part of this series, we’ll move from **concepts to code** — buil
 
 ---
 
-✨ **Next Steps**:  
-- Publish this article on **GitHub Pages** (or similar).  
-- Share a **LinkedIn post** with a teaser + carousel linking here.  
-- Follow up with a **hands-on coding article** + GitHub repo to showcase implementation.  
+## 📬 Stay Updated!  
+Follow my latest AI tutorials and projects:  
+🔗 [GitHub](https://github.com/dtsatyam) | 🔗 [LinkedIn](www.linkedin.com/in/satya-dataprofessional)  
+
+🚀 **Let’s Master Generative AI Together!**
