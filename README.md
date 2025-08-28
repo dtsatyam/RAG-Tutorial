@@ -414,6 +414,6 @@ In the next part of this series, we’ll move from **concepts to code** — buil
 
 ## 📬 Stay Updated!  
 Follow my latest AI tutorials and projects:  
-🔗 [GitHub](https://github.com/dtsatyam) | 🔗 [LinkedIn](www.linkedin.com/in/satya-dataprofessional)  
+🔗 [GitHub](https://github.com/dtsatyam) | 🔗 [LinkedIn](https://linkedin.com/in/satya-dataprofessional)  
 
 🚀 **Let’s Master Generative AI Together!**
