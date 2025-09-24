@@ -8,7 +8,7 @@ This guide is designed to take you on a **structured, hands-on journey**, coveri
 
 ## 📌 Table of Contents  
 
-### **🟢 1. Foundations of Deep Learning**  
+### **🟢 1. Fundamentals of RAG**  
 - [Search Mechanisms in RAG: From Dense to Hybrid Pipelines](RAG_SearchMechnisms.md)
 - [Evaluating Retrieval-Augmented Generation (RAG) Systems – A Complete Guide](RAG_Evaluation.md)
 
