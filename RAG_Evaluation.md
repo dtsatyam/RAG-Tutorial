@@ -178,7 +178,7 @@ To evaluate RAG effectively, we must answer two key questions:
 
 # 4. Evaluation Techniques for RAG
 
-Evaluating a Retrieval-Augmented Generation (RAG) system is more complex than evaluating a traditional NLP model, because performance depends on two distinct stages: **retrieval quality** and **generation quality**. A strong retriever with a weak generator (or vice versa) can still lead to poor results. Hence, evaluation must cover **end-to-end pipeline performance** as well as **individual components**.
+Evaluating a Retrieval-Augmented Generation (RAG) system is more complex than evaluating a traditional NLP model, because performance depends on three distinct stages: **retriever**, **re-ranker**, and **generator**. A strong retriever with a weak re-ranker or generator can still lead to poor results. Hence, evaluation must cover **each stage** as well as **end-to-end pipeline performance**.
 
 ---
 
@@ -186,99 +186,112 @@ Evaluating a Retrieval-Augmented Generation (RAG) system is more complex than ev
 
 RAG evaluation can be broadly divided into:
 
-1. **Retrieval Evaluation** – How well the system retrieves relevant information from the knowledge base.
-2. **Generation Evaluation** – How coherent, factual, and contextually aligned the generated response is.
-3. **End-to-End Evaluation** – How well retrieval + generation together answer the query.
+1. **Retriever Evaluation** – How well the system fetches relevant documents from the knowledge base.  
+2. **Re-ranker Evaluation** – How well the system orders candidate documents so the top-K are most relevant.  
+3. **Generation Evaluation** – How coherent, factual, and contextually aligned the generated response is.  
+4. **End-to-End Evaluation** – How well retrieval + reranking + generation together answer the query.
 
 ---
 
-## 4.2 Retrieval Evaluation
+## 4.2 Retriever Evaluation
 
-Since this RAG system uses a hybrid retriever (**semantic search via FAISS + keyword search via BM25**) with a **re-ranking step**, the goal is to measure how well it brings back useful passages.
+The hybrid retriever (**FAISS + BM25**) aims to maximize recall while maintaining precision.
 
 ### Common Metrics
-- **Precision@K** – Proportion of retrieved documents (top-K) that are actually relevant.
-- **Recall@K** – Proportion of all relevant documents that are present in the top-K retrieved set.
-- **Mean Average Precision (MAP)** – Averages precision across queries, taking ranking into account.
-- **nDCG (Normalized Discounted Cumulative Gain)** – Rewards retrieving relevant documents higher in the ranked list.
+- **Precision@K** – Fraction of retrieved documents (top-K) that are relevant.  
+- **Recall@K** – Fraction of all relevant documents included in top-K.  
+- **Mean Average Precision (MAP)** – Average precision across queries, accounting for ranking.  
+- **nDCG (Normalized Discounted Cumulative Gain)** – Rewards higher-ranked relevant documents.
 
-📌 *Example:* If the system retrieves 10 passages, and 7 of them are relevant, then Precision@10 = 0.7. If the knowledge base had 12 relevant passages total, Recall@10 = 7/12 = 0.58.
+📌 *Example:* Retrieving 10 documents with 7 relevant → Precision@10 = 0.7; if there were 12 total relevant, Recall@10 = 0.58.
 
 ---
 
-## 4.3 Generation Evaluation
+## 4.3 Re-ranker Evaluation
 
-Even if the retriever works well, the generator might:
-- Misinterpret the retrieved passages,
-- Add hallucinations, or
-- Produce incoherent answers.
+The re-ranker does **not introduce new documents**; it reorders candidates to optimize top-K relevance.  
+
+### Key Metrics
+- **nDCG@K** – Measures the quality of ranking; higher-ranked relevant documents get more credit.  
+- **MAP** – Average precision accounting for ranking improvements.  
+- **Hit Rate / Success@K** – Checks if at least one relevant document appears in top-K after re-ranking.  
+- **Pre/Post Comparison** – Compare metrics before and after reranking to measure its benefit.
+
+📌 *Tip:* A good re-ranker increases nDCG@K and Hit Rate without reducing Recall@K.
+
+---
+
+## 4.4 Generation Evaluation
+
+Even with strong retrieval and reranking, the generator may hallucinate, misinterpret, or produce incomplete answers.
 
 ### Common Metrics
-- **BLEU / ROUGE** – Measures overlap with reference answers (useful in QA datasets).
-- **BERTScore** – Uses embeddings to measure semantic similarity between generated and reference answers.
-- **Faithfulness** – Checks if the generated answer is grounded in the retrieved context (manual or automatic).
-- **Factuality** – Validates correctness of statements (can be human-evaluated or via LLM-as-a-judge).
-- **Answer Relevance** – Whether the generated answer addresses the query.
+- **BLEU / ROUGE** – Lexical similarity to reference answers.  
+- **BERTScore** – Semantic similarity using embeddings.  
+- **Faithfulness** – Checks if output aligns with retrieved documents.  
+- **Factuality** – Validates correctness of statements.  
+- **Answer Relevance** – Whether the response addresses the query.
 
 ---
 
-## 4.4 End-to-End Evaluation
+## 4.5 End-to-End Evaluation
 
-Here we evaluate the **full pipeline** (retrieval + generation combined).
+Evaluates **combined effect** of retriever + reranker + generator.
 
 ### Approaches
-1. **Human Evaluation** – Humans judge answers for *correctness, completeness, fluency, and helpfulness*.
-2. **LLM-as-a-Judge** – Use a strong LLM to score the generated answers against retrieved documents.
-3. **Task-Specific Benchmarks** – If labeled QA datasets are available, directly compute accuracy or F1 scores.
+1. **Human Evaluation** – Judges correctness, fluency, and helpfulness.  
+2. **LLM-as-a-Judge** – LLM scores generated answers against context.  
+3. **Task-Specific Benchmarks** – Use QA datasets to compute accuracy or F1.
 
 ---
 
-## 4.5 Trade-offs and Challenges
+## 4.6 Trade-offs and Challenges
 
-- **High Recall vs Precision** – More documents improve recall but may confuse the generator.
-- **Speed vs Accuracy** – Larger top-K retrieval improves accuracy but increases latency.
-- **Faithfulness** – Generators may hallucinate despite accurate retrieval, making faithfulness a crucial metric.
-
----
-
-## 4.6 Comparison of Evaluation Metrics
-
-| **Evaluation Type** | **Goal** | **Key Metrics** | **Example Use Case** |
-|----------------------|----------|-----------------|-----------------------|
-| **Retrieval** | Ensure relevant documents are fetched from the knowledge base | Precision@K, Recall@K, MAP, nDCG | Did the retriever bring the right supporting documents? |
-| **Generation** | Ensure the response is coherent, factual, and context-aware | BLEU, ROUGE, BERTScore, Faithfulness, Factuality, Answer Relevance | Does the generated answer make sense and stay faithful to retrieved docs? |
-| **End-to-End** | Measure overall system effectiveness | Human Eval, LLM-as-a-Judge, Accuracy/F1 | Does the system correctly answer the user query end-to-end? |
+- **High Recall vs Precision** – More documents improve recall but may confuse generator.  
+- **Ranking vs Relevance** – Poor reranking can negate good retrieval results.  
+- **Faithfulness vs Lexical Similarity** – High BLEU does not guarantee factual answers.
 
 ---
 
-## 4.7 Best Practices for Combining Metrics
+## 4.7 Comparison of Evaluation Metrics
 
-Evaluating RAG effectively requires a **combination of metrics**, since no single metric captures everything. Below are practical guidelines:
+| **Component** | **Goal** | **Key Metrics** | **Notes** |
+|---------------|----------|-----------------|-----------|
+| Retriever | Fetch relevant candidates | Precision@K, Recall@K, MAP, nDCG | Raw retrieval performance |
+| Re-ranker | Improve ordering of retrieved docs | nDCG@K, MAP, Hit Rate@K, Pre/Post Comparison | Compare metrics before/after reranking |
+| Generator | Produce coherent, factual answer | BLEU, ROUGE, BERTScore, Faithfulness, Factuality | Uses top-K ranked docs |
+| End-to-End | Evaluate overall system | Human Eval, LLM-as-a-Judge, Accuracy/F1 | Measures user-facing performance |
 
-### 1. **When to use Precision@K vs Recall@K**
-- Use **Precision@K** when you want to ensure the top retrieved results are highly relevant (e.g., small knowledge base, sensitive domains like healthcare/legal).
-- Use **Recall@K** when missing a relevant document is costly (e.g., research, compliance, fraud detection).
+---
 
-### 2. **Balancing Retrieval and Generation**
-- High retrieval recall with noisy results can overwhelm the generator → always check **Faithfulness** alongside **Recall@K**.
-- If the generator often hallucinates, prioritize **Faithfulness** and **Factuality** over lexical metrics like BLEU.
+## 4.8 Best Practices for Combining Metrics
 
-### 3. **Lexical vs Semantic Metrics**
-- **ROUGE/BLEU** are useful when reference answers exist (structured QA datasets).
-- **BERTScore** or **Embedding-based similarity** should be used when answers are more open-ended.
+1. **Precision@K vs Recall@K**
+   - Precision@K: Use when top results must be highly relevant.  
+   - Recall@K: Use when missing a relevant document is costly.  
 
-### 4. **End-to-End Focus**
-- Always include at least one **end-to-end metric** (e.g., Human Eval or LLM-as-a-Judge), because high retrieval and generation scores individually may not guarantee good user experience.
+2. **Ranking Evaluation**
+   - Always evaluate **reranker separately** using nDCG, MAP, Hit Rate.  
+   - Compare **pre/post reranking metrics** to quantify improvement.  
 
-### 5. **Practical Metric Combination (Recommended)**
-- **Retrieval**: Precision@K, Recall@K, nDCG  
-- **Generation**: Faithfulness + BERTScore  
-- **End-to-End**: Human Evaluation (or LLM-as-a-Judge if scaling up)
+3. **Balancing Retrieval and Generation**
+   - High recall with noisy docs → check Faithfulness.  
+   - Frequent hallucinations → prioritize Faithfulness and Factuality.  
 
-📌 *Rule of Thumb*:  
-- First ensure **retriever is strong** (good Recall@K and nDCG).  
-- Then ensure **generator is faithful** (answers grounded in retrieved docs).  
-- Finally, validate the **end-user experience** with human/LLM judgments.
+4. **Lexical vs Semantic Metrics**
+   - BLEU/ROUGE: Good for structured QA datasets.  
+   - BERTScore: Better for open-ended responses.  
+
+5. **End-to-End Focus**
+   - Include at least one **end-to-end metric** (Human Eval or LLM-as-a-Judge).  
+
+6. **Practical Metric Combination**
+   - **Retriever**: Precision@K, Recall@K, nDCG  
+   - **Re-ranker**: nDCG@K, Hit Rate@K  
+   - **Generator**: Faithfulness + BERTScore  
+   - **End-to-End**: Human Evaluation / LLM-as-a-Judge  
+
+📌 *Rule of Thumb:* Strong retriever → strong reranker → faithful generator → validated end-to-end.
 
 ---
 
